@@ -95,6 +95,7 @@ DELETE FROM customer
 -- 3.1 System Defined Functions
 -- Task – Create a function that returns the current time.
 SELECT CURRENT_TIMESTAMP;
+--SELECT current_time also works
 
 -- Task – create a function that returns the length of a mediatype from the mediatype table
 SELECT LENGTH(name) AS LengthOfEntry From mediatype;
@@ -116,7 +117,7 @@ FROM invoiceline;
 -- 3.4 User Defined Table Valued Functions
 -- Task – Create a function that returns all employees who are born after 1968.
 SELECT * from employee
-WHERE birthdate > '1969-01-01  00:00:00';
+WHERE birthdate >= '1969-01-01  00:00:00';
 
 -- 4.0 Stored Procedures
 --  In this section you will be creating and executing stored procedures. You will be creating various types of stored procedures that take input and output parameters.
@@ -124,30 +125,45 @@ WHERE birthdate > '1969-01-01  00:00:00';
 
 -- 4.1 Basic Stored Procedure
 -- Task – Create a stored procedure that selects the first and last names of all the employees.
-
+SELECT firstname, lastname FROM employee;
 
 -- 4.2 Stored Procedure Input Parameters
 -- Task – Create a stored procedure that updates the personal information of an employee.
-
+UPDATE employee
+SET firstname = 'Seems', lastname = 'Reasonable'
+WHERE employeeid = 1; 
 
 -- Task – Create a stored procedure that returns the managers of an employee.
-
+SELECT reportsto FROM employee
+WHERE employeeid = '2';
 
 -- 4.3 Stored Procedure Output Parameters
 -- Task – Create a stored procedure that returns the name and company of a customer.
-
+SELECT firstname, lastname, company FROM customer
+WHERE customerid = '5';
 
 -- 5.0 Transactions
 -- In this section you will be working with transactions. Transactions are usually nested within a stored procedure. You will also be working with handling errors in your SQL.
-BEGIN
-
-END
 
 -- Task – Create a transaction that given a invoiceId will delete that invoice (There may be constraints that rely on this, find out how to resolve them).
-
+DELETE FROM invoiceline 
+WHERE invoiceid IN
+	(SELECT invoiceid FROM invoice
+     WHERE customerid IN
+		(SELECT customerid FROM customer
+		 	WHERE firstname = 'Daan' and lastname = 'Peeters'));
+		 
+DELETE FROM invoice 
+WHERE customerid IN
+	(SELECT customerid FROM customer
+		 	WHERE firstname = 'Daan' and lastname = 'Peeters');
+		 
+DELETE FROM customer 
+	  WHERE firstname = 'Daan' and lastname = 'Peeters';
 
 -- Task – Create a transaction nested within a stored procedure that inserts a new record in the Customer table
-
+INSERT INTO customer(customerid, firstname, lastname, email)
+VALUES (60, 'Anonymous', 'Joe', 'email@email.bacon');
 
 -- 6.0 Triggers
 -- In this section you will create various kinds of triggers that work when certain DML statements are executed on a table.
@@ -155,18 +171,52 @@ END
 
 -- 6.1 AFTER/FOR
 -- Task - Create an after insert trigger on the employee table fired after a new record is inserted into the table.
+CREATE OR REPLACE FUNCTION updatelogfunc() RETURNS TRIGGER AS $employee$
+   BEGIN
+      INSERT INTO employee (firstname, lastname) VALUES ('John', 'Davy');
+      RETURN NEW;
+   END;
+$employee$ LANGUAGE plpgsql;
 
+CREATE TRIGGER my_trigger AFTER INSERT ON employee
+FOR EACH ROW EXECUTE PROCEDURE updatelogfunc();
 
 -- Task – Create an after update trigger on the album table that fires after a row is inserted in the table
+CREATE OR REPLACE FUNCTION updatelogfunc() RETURNS TRIGGER AS $album$
+   BEGIN
+      UPDATE album 
+	  SET albumid = '2'
+	  WHERE albumid = '1';
+   END;
+$album$ LANGUAGE plpgsql;
 
+CREATE TRIGGER my_trigger AFTER UPDATE album
+FOR EACH ROW EXECUTE PROCEDURE updatelogfunc();
 
 -- Task – Create an after delete trigger on the customer table that fires after a row is deleted from the table.
+CREATE OR REPLACE FUNCTION updatelogfunc() RETURNS TRIGGER AS $customer$
+   BEGIN
+      DELETE FROM customer 
+	  WHERE customerid = '10';
+   END;
+$customer$ LANGUAGE plpgsql;
 
+CREATE TRIGGER my_trigger AFTER INSERT ON customer
+FOR EACH ROW EXECUTE PROCEDURE updatelogfunc();
 
 
 -- 6.2 INSTEAD OF
 -- Task – Create an instead of trigger that restricts the deletion of any invoice that is priced over 50 dollars.
+CREATE OR REPLACE FUNCTION updatelogfunc() RETURNS TRIGGER AS $invoice$
+   BEGIN
+      DELETE FROM invoice 
+	  WHERE total <= '50';
+   END;
+$invoice$ LANGUAGE plpgsql;
 
+CREATE TRIGGER my_trigger BEFORE DELETE
+ON invoice
+FOR EACH ROW EXECUTE PROCEDURE updatelogfunc();
 
 -- 7.0 JOINS
 -- In this section you will be working with combining various tables through the use of joins. You will work with outer, inner, right, left, cross, and self joins.
