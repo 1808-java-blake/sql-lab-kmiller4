@@ -94,30 +94,67 @@ DELETE FROM customer
 
 -- 3.1 System Defined Functions
 -- Task – Create a function that returns the current time.
-SELECT CURRENT_TIMESTAMP;
---SELECT current_time also works
+CREATE OR REPLACE FUNCTION currentTime () RETURNS TIME AS $$
+DECLARE
+	thisTime TIME;
+   BEGIN
+   	SELECT CURRENT_TIME INTO thisTime;
+	RETURN thisTime;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- Task – create a function that returns the length of a mediatype from the mediatype table
-SELECT LENGTH(name) AS LengthOfEntry From mediatype;
+CREATE OR REPLACE FUNCTION mediaLength () RETURNS VARCHAR(120) AS $$
+DECLARE
+	mediaL VARCHAR(120);
+   BEGIN
+   	SELECT LENGTH(name) AS LengthOfEntry From mediatype INTO mediaL;
+	RETURN mediaL;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- 3.2 System Defined Aggregate Functions
 -- Task – Create a function that returns the average total of all invoices
-SELECT AVG(total)
-FROM invoice;
+CREATE OR REPLACE FUNCTION averageTotal () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	average NUMERIC(10, 2);
+   BEGIN
+   	SELECT AVG(total) FROM invoice INTO average;
+	RETURN average;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- Task – Create a function that returns the most expensive track
-SELECT MAX(unitprice)
-FROM track; 
+CREATE OR REPLACE FUNCTION highestPrice () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	price NUMERIC(10, 2);
+   BEGIN
+   	SELECT MAX(unitprice) FROM track INTO price;
+	RETURN price;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- 3.3 User Defined Scalar Functions
 -- Task – Create a function that returns the average price of invoiceline items in the invoiceline table
-SELECT AVG(unitprice)
-FROM invoiceline;
+CREATE OR REPLACE FUNCTION averagePrice () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	average NUMERIC(10, 2);
+   BEGIN
+   	SELECT AVG(unitprice) FROM invoiceline INTO average;
+	RETURN price;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- 3.4 User Defined Table Valued Functions
 -- Task – Create a function that returns all employees who are born after 1968.
-SELECT * from employee
-WHERE birthdate >= '1969-01-01  00:00:00';
+CREATE OR REPLACE FUNCTION after1968 () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	list NUMERIC(10, 2);
+   BEGIN
+   	SELECT * from employee WHERE birthdate >= '1969-01-01  00:00:00';
+	RETURN list;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- 4.0 Stored Procedures
 --  In this section you will be creating and executing stored procedures. You will be creating various types of stored procedures that take input and output parameters.
@@ -125,45 +162,90 @@ WHERE birthdate >= '1969-01-01  00:00:00';
 
 -- 4.1 Basic Stored Procedure
 -- Task – Create a stored procedure that selects the first and last names of all the employees.
-SELECT firstname, lastname FROM employee;
+CREATE OR REPLACE FUNCTION firstAndLast () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	list NUMERIC(10, 2);
+   BEGIN
+   	SELECT firstname, lastname FROM employee;
+	RETURN list;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- 4.2 Stored Procedure Input Parameters
 -- Task – Create a stored procedure that updates the personal information of an employee.
-UPDATE employee
-SET firstname = 'Seems', lastname = 'Reasonable'
-WHERE employeeid = 1; 
+CREATE OR REPLACE FUNCTION updateEmployee () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	list NUMERIC(10, 2);
+   BEGIN
+   	UPDATE employee
+	SET firstname = 'Seems', lastname = 'Reasonable'
+	WHERE employeeid = 1; 
+	RETURN list;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- Task – Create a stored procedure that returns the managers of an employee.
-SELECT reportsto FROM employee
-WHERE employeeid = '2';
+CREATE OR REPLACE FUNCTION returnManagers () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	list NUMERIC(10, 2);
+   BEGIN
+   	UPDATE employee
+	SELECT reportsto FROM employee
+	WHERE employeeid = '2';
+	RETURN list;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- 4.3 Stored Procedure Output Parameters
 -- Task – Create a stored procedure that returns the name and company of a customer.
-SELECT firstname, lastname, company FROM customer
+CREATE OR REPLACE FUNCTION returnNameAndCompany () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	list NUMERIC(10, 2);
+   BEGIN
+   	SELECT firstname, lastname, company FROM customer
 WHERE customerid = '5';
+	RETURN list;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- 5.0 Transactions
 -- In this section you will be working with transactions. Transactions are usually nested within a stored procedure. You will also be working with handling errors in your SQL.
 
 -- Task – Create a transaction that given a invoiceId will delete that invoice (There may be constraints that rely on this, find out how to resolve them).
-DELETE FROM invoiceline 
-WHERE invoiceid IN
-	(SELECT invoiceid FROM invoice
-     WHERE customerid IN
+CREATE OR REPLACE FUNCTION deleteInvoice () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	list NUMERIC(10, 2);
+   BEGIN
+   
+		DELETE FROM invoiceline 
+	WHERE invoiceid IN
+		(SELECT invoiceid FROM invoice
+		 WHERE customerid IN
+			(SELECT customerid FROM customer
+				WHERE firstname = 'Daan' and lastname = 'Peeters'));
+
+	DELETE FROM invoice 
+	WHERE customerid IN
 		(SELECT customerid FROM customer
-		 	WHERE firstname = 'Daan' and lastname = 'Peeters'));
-		 
-DELETE FROM invoice 
-WHERE customerid IN
-	(SELECT customerid FROM customer
-		 	WHERE firstname = 'Daan' and lastname = 'Peeters');
-		 
-DELETE FROM customer 
-	  WHERE firstname = 'Daan' and lastname = 'Peeters';
+				WHERE firstname = 'Daan' and lastname = 'Peeters');
+
+	DELETE FROM customer 
+		  WHERE firstname = 'Daan' and lastname = 'Peeters';
+			 
+	RETURN list;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- Task – Create a transaction nested within a stored procedure that inserts a new record in the Customer table
-INSERT INTO customer(customerid, firstname, lastname, email)
-VALUES (60, 'Anonymous', 'Joe', 'email@email.bacon');
+CREATE OR REPLACE FUNCTION insertCustomer () RETURNS NUMERIC(10, 2) AS $$
+DECLARE
+	list NUMERIC(10, 2);
+   BEGIN
+   
+	INSERT INTO customer(customerid, firstname, lastname, email) VALUES (60, 'Anonymous', 'Joe', 'email@email.bacon');
+	RETURN list;
+   END;
+$$ LANGUAGE plpgsql;
 
 -- 6.0 Triggers
 -- In this section you will create various kinds of triggers that work when certain DML statements are executed on a table.
